@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.config;
+package ru.develop.restaurantvoting.app.config;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import ru.develop.restaurantvoting.error.AppException;
-import ru.develop.restaurantvoting.error.ErrorType;
+import ru.develop.restaurantvoting.common.error.AppException;
+import ru.develop.restaurantvoting.common.error.ErrorType;
 
 import java.io.FileNotFoundException;
 import java.net.URI;
@@ -35,7 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static ru.develop.restaurantvoting.error.ErrorType.*;
+import static ru.develop.restaurantvoting.common.error.ErrorType.*;
 
 @RestControllerAdvice
 @AllArgsConstructor

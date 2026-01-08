@@ -1,6 +1,6 @@
-package ru.develop.restaurantvoting.error;
+package ru.develop.restaurantvoting.common.error;
 
-import static ru.develop.restaurantvoting.error.ErrorType.NOT_FOUND;
+import static ru.develop.restaurantvoting.common.error.ErrorType.NOT_FOUND;
 
 public class NotFoundException extends AppException {
     public NotFoundException(String msg) {

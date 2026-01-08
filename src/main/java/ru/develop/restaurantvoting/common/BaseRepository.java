@@ -1,12 +1,11 @@
-package ru.develop.restaurantvoting.repository;
+package ru.develop.restaurantvoting.common;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.transaction.annotation.Transactional;
-import ru.develop.restaurantvoting.HasId;
-import ru.develop.restaurantvoting.error.NotFoundException;
+import ru.develop.restaurantvoting.common.error.NotFoundException;
 
 @NoRepositoryBean
 public interface BaseRepository<T> extends JpaRepository<T, Integer> {
@@ -16,6 +15,7 @@ public interface BaseRepository<T> extends JpaRepository<T, Integer> {
     @Query("DELETE FROM #{#entityName} e WHERE e.id=:id")
     int delete(int id);
 
+    @SuppressWarnings("all")
     default void deleteExisted(int id) {
         if (delete(id) == 0) {
             throw new NotFoundException("Entity with id=" + id + " not found");

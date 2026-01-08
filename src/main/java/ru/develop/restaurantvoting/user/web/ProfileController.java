@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.user.web;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ru.develop.restaurantvoting.app.AuthUser;
-import ru.develop.restaurantvoting.model.User;
-import ru.develop.restaurantvoting.to.UserTo;
-import ru.develop.restaurantvoting.util.UsersUtil;
+import ru.develop.restaurantvoting.user.model.User;
+import ru.develop.restaurantvoting.user.to.UserTo;
+import ru.develop.restaurantvoting.user.util.UsersUtil;
 
 import java.net.URI;
 

@@ -1,9 +1,9 @@
-package ru.develop.restaurantvoting;
+package ru.develop.restaurantvoting.app;
 
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
-import ru.develop.restaurantvoting.model.Role;
-import ru.develop.restaurantvoting.model.User;
+import ru.develop.restaurantvoting.user.model.Role;
+import ru.develop.restaurantvoting.user.model.User;
 
 public class AuthUser extends org.springframework.security.core.userdetails.User {
 

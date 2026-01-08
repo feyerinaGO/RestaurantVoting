@@ -1,9 +1,9 @@
-package ru.develop.restaurantvoting.util;
+package ru.develop.restaurantvoting.user.util;
 
 import lombok.experimental.UtilityClass;
-import ru.develop.restaurantvoting.model.Role;
-import ru.develop.restaurantvoting.model.User;
-import ru.develop.restaurantvoting.to.UserTo;
+import ru.develop.restaurantvoting.user.model.Role;
+import ru.develop.restaurantvoting.user.model.User;
+import ru.develop.restaurantvoting.user.to.UserTo;
 
 @UtilityClass
 public class UsersUtil {

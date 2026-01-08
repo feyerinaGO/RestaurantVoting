@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.model;
+package ru.develop.restaurantvoting.restaurant.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -7,8 +7,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import ru.develop.restaurantvoting.common.model.NamedEntity;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 import java.util.List;
 
@@ -27,9 +29,11 @@ public class Restaurant extends NamedEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "restaurant")
     @OrderBy("menuDate DESC")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<MenuItem> menuItems;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "restaurant")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Vote> votes;
 
     public Restaurant(Integer id, String name, String address) {

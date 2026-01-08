@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.to;
+package ru.develop.restaurantvoting.common.to;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;

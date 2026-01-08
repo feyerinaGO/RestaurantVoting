@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting;
+package ru.develop.restaurantvoting.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.util.Assert;

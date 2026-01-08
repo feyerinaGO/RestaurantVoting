@@ -1,6 +1,6 @@
-package ru.develop.restaurantvoting.error;
+package ru.develop.restaurantvoting.common.error;
 
-import static ru.develop.restaurantvoting.error.ErrorType.BAD_REQUEST;
+import static ru.develop.restaurantvoting.common.error.ErrorType.BAD_REQUEST;
 
 public class IllegalRequestDataException extends AppException {
     public IllegalRequestDataException(String msg) {

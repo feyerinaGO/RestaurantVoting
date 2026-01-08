@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.model;
+package ru.develop.restaurantvoting.user.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,10 +11,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.jspecify.annotations.NonNull;
 import ru.develop.restaurantvoting.common.HasIdAndEmail;
 import ru.develop.restaurantvoting.common.model.NamedEntity;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
+import ru.develop.restaurantvoting.restaurant.model.Vote;
 
 import java.util.*;
 
@@ -56,6 +59,7 @@ public class User extends NamedEntity implements HasIdAndEmail {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
     @OrderBy("voteDate DESC")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @Schema(hidden = true)
     private List<Vote> votes;
 

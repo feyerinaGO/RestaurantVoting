@@ -1,11 +1,11 @@
-package ru.develop.restaurantvoting.repository;
+package ru.develop.restaurantvoting.restaurant.repository;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 import ru.develop.restaurantvoting.common.BaseRepository;
 import ru.develop.restaurantvoting.common.error.NotFoundException;
-import ru.develop.restaurantvoting.model.MenuItem;
+import ru.develop.restaurantvoting.restaurant.model.MenuItem;
 
 import java.time.LocalDate;
 import java.util.List;

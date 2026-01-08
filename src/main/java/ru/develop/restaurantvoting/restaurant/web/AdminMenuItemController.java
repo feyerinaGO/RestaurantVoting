@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.restaurant.web;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -9,11 +9,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ru.develop.restaurantvoting.model.MenuItem;
-import ru.develop.restaurantvoting.repository.MenuItemRepository;
-import ru.develop.restaurantvoting.repository.RestaurantRepository;
-import ru.develop.restaurantvoting.to.MenuItemTo;
-import ru.develop.restaurantvoting.util.MenuItemsUtil;
+import ru.develop.restaurantvoting.restaurant.model.MenuItem;
+import ru.develop.restaurantvoting.restaurant.repository.MenuItemRepository;
+import ru.develop.restaurantvoting.restaurant.repository.RestaurantRepository;
+import ru.develop.restaurantvoting.restaurant.service.MenuItemService;
+import ru.develop.restaurantvoting.restaurant.to.MenuItemTo;
+import ru.develop.restaurantvoting.restaurant.util.MenuItemsUtil;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ public class AdminMenuItemController {
 
     private final MenuItemRepository repository;
     private final RestaurantRepository restaurantRepository;
+    private final MenuItemService menuItemService;
 
     @GetMapping
     public List<MenuItemTo> getAll(@PathVariable int restaurantId) {
@@ -57,8 +59,7 @@ public class AdminMenuItemController {
     public ResponseEntity<MenuItem> create(@PathVariable int restaurantId, @Valid @RequestBody MenuItem menuItem) {
         log.info("create {} for restaurant {}", menuItem, restaurantId);
         checkIsNew(menuItem);
-        menuItem.setRestaurant(restaurantRepository.getExisted(restaurantId));
-        MenuItem created = repository.save(menuItem);
+        MenuItem created = menuItemService.save(restaurantId, menuItem);
         URI uriOfNewResource = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path(REST_URL + "/{id}")
                 .buildAndExpand(restaurantId, created.getId()).toUri();
@@ -71,8 +72,7 @@ public class AdminMenuItemController {
         log.info("update {} with id={} for restaurant {}", menuItem, id, restaurantId);
         assureIdConsistent(menuItem, id);
         repository.getBelonged(restaurantId, id);
-        menuItem.setRestaurant(restaurantRepository.getExisted(restaurantId));
-        repository.save(menuItem);
+        menuItemService.save(restaurantId, menuItem);
     }
 
     @DeleteMapping("/{id}")

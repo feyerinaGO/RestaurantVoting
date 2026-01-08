@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.config;
+package ru.develop.restaurantvoting.app.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.json.ProblemDetailJacksonMixin;
-import ru.develop.restaurantvoting.util.JsonUtil;
+import ru.develop.restaurantvoting.common.util.JsonUtil;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.datatype.hibernate7.Hibernate7Module;

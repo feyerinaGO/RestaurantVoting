@@ -1,10 +1,10 @@
-package ru.develop.restaurantvoting.to;
+package ru.develop.restaurantvoting.common.to;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

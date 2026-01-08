@@ -1,11 +1,11 @@
-package ru.develop.restaurantvoting.model;
+package ru.develop.restaurantvoting.common.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 import ru.develop.restaurantvoting.common.HasId;
 
-import static ru.develop.restaurantvoting.util.HibernateProxyHelper.getClassWithoutInitializingProxy;
+import static ru.develop.restaurantvoting.common.util.HibernateProxyHelper.getClassWithoutInitializingProxy;
 
 @MappedSuperclass
 @Access(AccessType.FIELD)

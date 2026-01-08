@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.error;
+package ru.develop.restaurantvoting.common.error;
 
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;

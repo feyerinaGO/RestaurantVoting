@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    show-sql: false
+    hibernate.ddl-auto: create-drop
+  datasource:
+    url: jdbc:h2:mem:voting_test
+  cache:
+    type: none
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.test.web.servlet: DEBUG

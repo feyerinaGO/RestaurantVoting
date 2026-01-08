@@ -1,10 +1,11 @@
-package ru.develop.restaurantvoting.config;
+package ru.develop.restaurantvoting.app.config;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -14,10 +15,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import ru.develop.restaurantvoting.AuthUser;
-import ru.develop.restaurantvoting.model.Role;
-import ru.develop.restaurantvoting.model.User;
-import ru.develop.restaurantvoting.repository.UserRepository;
+import ru.develop.restaurantvoting.app.AuthUser;
+import ru.develop.restaurantvoting.user.model.Role;
+import ru.develop.restaurantvoting.user.model.User;
+import ru.develop.restaurantvoting.user.repository.UserRepository;
 
 import java.util.Optional;
 
@@ -51,6 +52,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/**").authorizeHttpRequests(authz ->
                         authz.requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
+                                .requestMatchers(HttpMethod.GET, "/api/restaurants/*/full").hasRole(Role.ADMIN.name())
+                                .requestMatchers(HttpMethod.POST, "/api/restaurants").hasRole(Role.ADMIN.name())
+                                .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole(Role.ADMIN.name())
+                                .requestMatchers(HttpMethod.DELETE, "/api/restaurants/**").hasRole(Role.ADMIN.name())
                                 .requestMatchers(HttpMethod.POST, "/api/profile").anonymous()
                                 .requestMatchers("/", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                                 .requestMatchers("/api/**").authenticated())

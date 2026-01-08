@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.to;
+package ru.develop.restaurantvoting.user.to;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import ru.develop.restaurantvoting.common.HasIdAndEmail;
 import ru.develop.restaurantvoting.common.to.NamedTo;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 @Value
 @EqualsAndHashCode(callSuper = true)

@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.to;
+package ru.develop.restaurantvoting.restaurant.to;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import ru.develop.restaurantvoting.common.to.BaseTo;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 import java.time.LocalDate;
 

@@ -1,12 +1,12 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.user.web;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
-import ru.develop.restaurantvoting.model.User;
-import ru.develop.restaurantvoting.repository.UserRepository;
+import ru.develop.restaurantvoting.common.validation.UniqueMailValidator;
+import ru.develop.restaurantvoting.user.model.User;
+import ru.develop.restaurantvoting.user.repository.UserRepository;
 
 import static org.slf4j.LoggerFactory.getLogger;
 

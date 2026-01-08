@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.model;
+package ru.develop.restaurantvoting.common.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
@@ -8,8 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.develop.restaurantvoting.common.model.BaseEntity;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 @MappedSuperclass
 @Getter

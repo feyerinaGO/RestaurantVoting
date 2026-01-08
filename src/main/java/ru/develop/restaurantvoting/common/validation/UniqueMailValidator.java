@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.common.validation;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import ru.develop.restaurantvoting.app.AuthUtil;
 import ru.develop.restaurantvoting.common.HasIdAndEmail;
-import ru.develop.restaurantvoting.repository.UserRepository;
+import ru.develop.restaurantvoting.user.repository.UserRepository;
 
 @Component
 @AllArgsConstructor

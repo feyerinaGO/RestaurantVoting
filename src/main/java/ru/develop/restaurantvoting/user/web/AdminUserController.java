@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.user.web;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ru.develop.restaurantvoting.model.User;
+import ru.develop.restaurantvoting.user.model.User;
 
 import java.net.URI;
 import java.util.List;

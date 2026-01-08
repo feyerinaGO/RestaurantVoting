@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.validation;
+package ru.develop.restaurantvoting.common.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

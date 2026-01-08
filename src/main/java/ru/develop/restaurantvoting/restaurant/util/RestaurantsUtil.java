@@ -1,8 +1,8 @@
-package ru.develop.restaurantvoting.util;
+package ru.develop.restaurantvoting.restaurant.util;
 
 import lombok.experimental.UtilityClass;
-import ru.develop.restaurantvoting.model.Restaurant;
-import ru.develop.restaurantvoting.to.RestaurantTo;
+import ru.develop.restaurantvoting.restaurant.model.Restaurant;
+import ru.develop.restaurantvoting.restaurant.to.RestaurantTo;
 
 import java.util.Collection;
 import java.util.List;

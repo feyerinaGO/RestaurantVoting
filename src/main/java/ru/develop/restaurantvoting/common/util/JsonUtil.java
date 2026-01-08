@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.util;
+package ru.develop.restaurantvoting.common.util;
 
 import lombok.experimental.UtilityClass;
 import tools.jackson.core.JacksonException;

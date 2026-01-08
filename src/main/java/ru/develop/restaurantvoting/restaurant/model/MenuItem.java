@@ -1,4 +1,4 @@
-package ru.develop.restaurantvoting.model;
+package ru.develop.restaurantvoting.restaurant.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import ru.develop.restaurantvoting.common.model.NamedEntity;
-import ru.develop.restaurantvoting.validation.NoHtml;
+import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 import java.time.LocalDate;
 

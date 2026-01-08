@@ -1,5 +1,6 @@
-package ru.develop.restaurantvoting.web;
+package ru.develop.restaurantvoting.restaurant.web;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -9,13 +10,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ru.develop.restaurantvoting.model.Restaurant;
-import ru.develop.restaurantvoting.repository.RestaurantRepository;
-import ru.develop.restaurantvoting.to.RestaurantTo;
-import ru.develop.restaurantvoting.util.RestaurantsUtil;
+import ru.develop.restaurantvoting.restaurant.model.Restaurant;
+import ru.develop.restaurantvoting.restaurant.repository.RestaurantRepository;
+import ru.develop.restaurantvoting.restaurant.to.RestaurantTo;
+import ru.develop.restaurantvoting.restaurant.util.RestaurantsUtil;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -49,16 +49,14 @@ public class RestaurantController {
     }
 
     @GetMapping("/{id}/full")
-    @Secured("ROLE_ADMIN")
     public ResponseEntity<Restaurant> getFull(@PathVariable int id) {
         log.info("getFull {}", id);
         return ResponseEntity.of(repository.getWithMenu(id));
     }
 
     @PostMapping
-    @Secured("ROLE_ADMIN")
     @CacheEvict(value = "restaurants", allEntries = true)
-    public ResponseEntity<Restaurant> create(@RequestBody Restaurant restaurant) {
+    public ResponseEntity<Restaurant> create(@Valid @RequestBody Restaurant restaurant) {
         log.info("create {}", restaurant);
         checkIsNew(restaurant);
         Restaurant created = repository.save(restaurant);
@@ -69,17 +67,15 @@ public class RestaurantController {
     }
 
     @PutMapping("/{id}")
-    @Secured("ROLE_ADMIN")
     @CacheEvict(value = "restaurants", allEntries = true)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(@RequestBody Restaurant restaurant, @PathVariable int id) {
+    public void update(@Valid @RequestBody Restaurant restaurant, @PathVariable int id) {
         log.info("update {} with id={}", restaurant, id);
         assureIdConsistent(restaurant, id);
         repository.save(restaurant);
     }
 
     @DeleteMapping("/{id}")
-    @Secured("ROLE_ADMIN")
     @CacheEvict(value = "restaurants", allEntries = true)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable int id) {
@@ -88,7 +84,8 @@ public class RestaurantController {
     }
 
     @GetMapping("/by-date")
-    public List<RestaurantTo> getAllByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public List<RestaurantTo> getAllByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         log.info("getAllByDate {}", date);
         return RestaurantsUtil.getTos(repository.getAllWithMenuByDate(date,
                 Sort.by(Sort.Direction.ASC, "name")));

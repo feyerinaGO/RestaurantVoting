@@ -5,10 +5,7 @@ import ru.develop.restaurantvoting.restaurant.model.MenuItem;
 import ru.develop.restaurantvoting.restaurant.to.MenuItemTo;
 
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
-
-import static java.time.LocalDate.of;
 
 public class MenuItemTestData {
     public static final MatcherFactory.Matcher<MenuItem> MENU_ITEM_MATCHER =

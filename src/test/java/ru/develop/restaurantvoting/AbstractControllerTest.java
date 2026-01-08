@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(TestTimeProviderConfig.class)
 public abstract class AbstractControllerTest {
 
     @Autowired

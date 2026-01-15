@@ -13,7 +13,7 @@ public class MenuItemsUtil {
 
     public static MenuItemTo createTo(MenuItem menuItem) {
         return new MenuItemTo(menuItem.getId(), menuItem.getMenuDate(),
-                menuItem.getDescription(), menuItem.getPrice());
+                menuItem.getName(), menuItem.getDescription(), menuItem.getPrice());
     }
 
     public static List<MenuItemTo> getTos(Collection<MenuItem> menuItems) {

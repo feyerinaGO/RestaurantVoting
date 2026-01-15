@@ -1,8 +1,7 @@
 package ru.develop.restaurantvoting.restaurant;
 
-import ru.develop.restaurantvoting.MatcherFactory;
 import ru.develop.restaurantvoting.restaurant.model.Vote;
-import ru.develop.restaurantvoting.restaurant.to.VoteTo;
+import ru.develop.restaurantvoting.user.UserTestData;
 
 import java.time.LocalDate;
 
@@ -17,5 +16,8 @@ public class VoteTestData {
     static {
         userVote1.setRestaurant(RestaurantTestData.restaurant1);
         adminVote1.setRestaurant(RestaurantTestData.restaurant2);
+
+        userVote1.setUser(UserTestData.user);
+        adminVote1.setUser(UserTestData.admin);
     }
 }

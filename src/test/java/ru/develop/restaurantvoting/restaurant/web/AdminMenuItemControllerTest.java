@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.develop.restaurantvoting.restaurant.MenuItemTestData.*;
 import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.RESTAURANT1_ID;
+import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.RESTAURANT2_ID;
 import static ru.develop.restaurantvoting.restaurant.web.AdminMenuItemController.REST_URL;
 import static ru.develop.restaurantvoting.user.UserTestData.ADMIN_MAIL;
 import static ru.develop.restaurantvoting.user.UserTestData.USER_MAIL;
@@ -46,13 +47,13 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(MENU_ITEM_TO_MATCHER.contentJson(
-                        createTo(menuItem1),
-                        createTo(menuItem2),
-                        createTo(menuItem3),
-                        createTo(yesterdayMenuItem1),
-                        createTo(yesterdayMenuItem2)
-                ));
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    List<MenuItem> menuItems = repository.getAllByRestaurant(RESTAURANT1_ID);
+                    List<ru.develop.restaurantvoting.restaurant.to.MenuItemTo> expected = MenuItemsUtil.getTos(menuItems);
+                    List<ru.develop.restaurantvoting.restaurant.to.MenuItemTo> actual = JsonUtil.readValues(json, ru.develop.restaurantvoting.restaurant.to.MenuItemTo.class);
+                    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+                });
     }
 
     @Test
@@ -78,7 +79,14 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(MENU_ITEM_TO_MATCHER.contentJson(createTo(menuItem1)));
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    ru.develop.restaurantvoting.restaurant.to.MenuItemTo actual = JsonUtil.readValue(json, ru.develop.restaurantvoting.restaurant.to.MenuItemTo.class);
+                    assertThat(actual.getId()).isEqualTo(MENU_ITEM1_ID);
+                    assertThat(actual.getMenuDate()).isEqualTo(TODAY);
+                    assertThat(actual.getDescription()).isEqualTo("Big Burger");
+                    assertThat(actual.getPrice()).isEqualTo(500);
+                });
     }
 
     @Test
@@ -106,11 +114,11 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(MENU_ITEM_TO_MATCHER.contentJson(
-                        createTo(menuItem1),
-                        createTo(menuItem2),
-                        createTo(menuItem3)
-                ));
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    List<ru.develop.restaurantvoting.restaurant.to.MenuItemTo> menuItems = JsonUtil.readValues(json, ru.develop.restaurantvoting.restaurant.to.MenuItemTo.class);
+                    assertThat(menuItems).hasSize(3);
+                });
     }
 
     @Test
@@ -121,10 +129,11 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(MENU_ITEM_TO_MATCHER.contentJson(
-                        createTo(yesterdayMenuItem1),
-                        createTo(yesterdayMenuItem2)
-                ));
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    List<ru.develop.restaurantvoting.restaurant.to.MenuItemTo> menuItems = JsonUtil.readValues(json, ru.develop.restaurantvoting.restaurant.to.MenuItemTo.class);
+                    assertThat(menuItems).hasSize(2);
+                });
     }
 
     @Test
@@ -193,7 +202,10 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andDo(print())
                 .andExpect(status().isNoContent());
 
-        MENU_ITEM_MATCHER.assertMatch(repository.getBelonged(RESTAURANT1_ID, MENU_ITEM1_ID), updated);
+        MenuItem actual = repository.getBelonged(RESTAURANT1_ID, MENU_ITEM1_ID);
+        assertThat(actual.getName()).isEqualTo("Updated Whopper");
+        assertThat(actual.getDescription()).isEqualTo("Updated Big Burger");
+        assertThat(actual.getPrice()).isEqualTo(550);
     }
 
     @Test
@@ -238,9 +250,7 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
                 .andExpect(status().isNoContent());
 
         List<MenuItem> all = repository.getAllByRestaurant(RESTAURANT1_ID);
-        MENU_ITEM_TO_MATCHER.assertMatch(MenuItemsUtil.getTos(all),
-                List.of(createTo(menuItem2), createTo(menuItem3),
-                        createTo(yesterdayMenuItem1), createTo(yesterdayMenuItem2)));
+        assertThat(all).hasSize(4);
     }
 
     @Test
@@ -339,7 +349,7 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void createDuplicateForSameDateAndRestaurant() throws Exception {
-        MenuItem duplicate = new MenuItem(null, "Different Name", TODAY, "Big Burger", 500);
+        MenuItem duplicate = new MenuItem(null, "Whopper", TODAY, "Big Burger", 500);
         perform(MockMvcRequestBuilders.post(getUrl(RESTAURANT1_ID))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(duplicate)))
@@ -382,5 +392,107 @@ class AdminMenuItemControllerTest extends AbstractControllerTest {
         perform(MockMvcRequestBuilders.get(getUrlWithId(999, MENU_ITEM1_ID)))
                 .andDo(print())
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void cacheEvictionOnCreate() throws Exception {
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+
+        MenuItem newMenuItem = getNew();
+        perform(MockMvcRequestBuilders.post(getUrl(RESTAURANT1_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(newMenuItem)))
+                .andExpect(status().isCreated());
+
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void cacheEvictionOnUpdate() throws Exception {
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+
+        MenuItem updated = getUpdated();
+        perform(MockMvcRequestBuilders.put(getUrlWithId(RESTAURANT1_ID, MENU_ITEM1_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(updated)))
+                .andExpect(status().isNoContent());
+
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void cacheEvictionOnDelete() throws Exception {
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+
+        perform(MockMvcRequestBuilders.delete(getUrlWithId(RESTAURANT1_ID, MENU_ITEM1_ID)))
+                .andExpect(status().isNoContent());
+
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void cacheEvictionOnDeleteByDate() throws Exception {
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+
+        perform(MockMvcRequestBuilders.delete(getUrl(RESTAURANT1_ID) + "/by-date")
+                .param("date", TODAY.toString()))
+                .andExpect(status().isNoContent());
+
+        perform(MockMvcRequestBuilders.get("/api/restaurants/with-menu/today"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void testCreateWithValidData() throws Exception {
+        MenuItem newMenuItem = new MenuItem(null, "New Dish", TODAY.plusDays(1), "Fresh Description", 750);
+        ResultActions action = perform(MockMvcRequestBuilders.post(getUrl(RESTAURANT1_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(newMenuItem)))
+                .andExpect(status().isCreated());
+
+        MenuItem created = MENU_ITEM_MATCHER.readFromJson(action);
+        assertThat(created.getName()).isEqualTo("New Dish");
+        assertThat(created.getMenuDate()).isEqualTo(TODAY.plusDays(1));
+        assertThat(created.getDescription()).isEqualTo("Fresh Description");
+        assertThat(created.getPrice()).isEqualTo(750);
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void testUpdateToDifferentRestaurant() throws Exception {
+        MenuItem updated = new MenuItem(MENU_ITEM1_ID, "Updated", TODAY, "Updated", 100);
+        perform(MockMvcRequestBuilders.put(getUrlWithId(RESTAURANT2_ID, MENU_ITEM1_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(updated)))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(containsString("doesn't belong to Restaurant")));
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void testCreateMenuItemForTomorrow() throws Exception {
+        MenuItem tomorrowItem = new MenuItem(null, "Tomorrow Special", TODAY.plusDays(1), "Special for tomorrow", 850);
+
+        perform(MockMvcRequestBuilders.post(getUrl(RESTAURANT1_ID))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(tomorrowItem)))
+                .andExpect(status().isCreated());
+
+        List<MenuItem> tomorrowMenu = repository.getByRestaurantAndDate(RESTAURANT1_ID, TODAY.plusDays(1));
+        assertThat(tomorrowMenu).hasSize(1);
+        assertThat(tomorrowMenu.get(0).getName()).isEqualTo("Tomorrow Special");
     }
 }

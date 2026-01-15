@@ -15,12 +15,13 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "menu_items", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"restaurant_id", "menu_date", "description"}, name = "menu_items_unique_restaurant_date_description_idx")
+        @UniqueConstraint(columnNames = {"restaurant_id", "menu_date", "name"},
+                name = "menu_items_unique_restaurant_date_name_idx")
 })
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(callSuper = true, exclude = {"restaurant"})
+@ToString(callSuper = true)
 public class MenuItem extends NamedEntity {
 
     @Column(name = "menu_date", nullable = false)
@@ -41,6 +42,7 @@ public class MenuItem extends NamedEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
     private Restaurant restaurant;
 
     public MenuItem(Integer id, String name, LocalDate menuDate, String description, Integer price) {

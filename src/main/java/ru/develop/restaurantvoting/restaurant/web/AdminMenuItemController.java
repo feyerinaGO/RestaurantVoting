@@ -10,8 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ru.develop.restaurantvoting.restaurant.model.MenuItem;
-import ru.develop.restaurantvoting.restaurant.repository.MenuItemRepository;
-import ru.develop.restaurantvoting.restaurant.repository.RestaurantRepository;
 import ru.develop.restaurantvoting.restaurant.service.MenuItemService;
 import ru.develop.restaurantvoting.restaurant.to.MenuItemTo;
 import ru.develop.restaurantvoting.restaurant.util.MenuItemsUtil;
@@ -30,36 +28,32 @@ import static ru.develop.restaurantvoting.common.util.ValidationUtil.checkIsNew;
 public class AdminMenuItemController {
     static final String REST_URL = "/api/admin/restaurants/{restaurantId}/menu-items";
 
-    private final MenuItemRepository repository;
-    private final RestaurantRepository restaurantRepository;
     private final MenuItemService menuItemService;
 
     @GetMapping
     public List<MenuItemTo> getAll(@PathVariable int restaurantId) {
         log.info("getAll for restaurant {}", restaurantId);
-        restaurantRepository.getExisted(restaurantId);
-        return MenuItemsUtil.getTos(repository.getAllByRestaurant(restaurantId));
+        return MenuItemsUtil.getTos(menuItemService.getRestaurantMenu(restaurantId));
     }
 
     @GetMapping("/{id}")
     public MenuItemTo get(@PathVariable int restaurantId, @PathVariable int id) {
         log.info("get {} for restaurant {}", id, restaurantId);
-        return MenuItemsUtil.createTo(repository.getBelonged(restaurantId, id));
+        return MenuItemsUtil.createTo(menuItemService.getMenuItem(restaurantId, id));
     }
 
     @GetMapping("/by-date")
     public List<MenuItemTo> getByDate(@PathVariable int restaurantId,
                                       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         log.info("getByDate {} for restaurant {}", date, restaurantId);
-        restaurantRepository.getExisted(restaurantId);
-        return MenuItemsUtil.getTos(repository.getByRestaurantAndDate(restaurantId, date));
+        return MenuItemsUtil.getTos(menuItemService.getMenuByDate(restaurantId, date));
     }
 
     @PostMapping
     public ResponseEntity<MenuItem> create(@PathVariable int restaurantId, @Valid @RequestBody MenuItem menuItem) {
         log.info("create {} for restaurant {}", menuItem, restaurantId);
         checkIsNew(menuItem);
-        MenuItem created = menuItemService.save(restaurantId, menuItem);
+        MenuItem created = menuItemService.createMenuItem(restaurantId, menuItem);
         URI uriOfNewResource = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path(REST_URL + "/{id}")
                 .buildAndExpand(restaurantId, created.getId()).toUri();
@@ -71,15 +65,14 @@ public class AdminMenuItemController {
     public void update(@PathVariable int restaurantId, @Valid @RequestBody MenuItem menuItem, @PathVariable int id) {
         log.info("update {} with id={} for restaurant {}", menuItem, id, restaurantId);
         assureIdConsistent(menuItem, id);
-        repository.getBelonged(restaurantId, id);
-        menuItemService.save(restaurantId, menuItem);
+        menuItemService.updateMenuItem(restaurantId, id, menuItem);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable int restaurantId, @PathVariable int id) {
         log.info("delete {} for restaurant {}", id, restaurantId);
-        repository.deleteExisted(id);
+        menuItemService.deleteMenuItem(restaurantId, id);
     }
 
     @DeleteMapping("/by-date")
@@ -87,6 +80,6 @@ public class AdminMenuItemController {
     public void deleteByDate(@PathVariable int restaurantId,
                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         log.info("deleteByDate {} for restaurant {}", date, restaurantId);
-        repository.deleteByRestaurantAndDate(restaurantId, date);
+        menuItemService.deleteMenuByDate(restaurantId, date);
     }
 }

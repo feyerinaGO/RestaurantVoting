@@ -4,18 +4,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import ru.develop.restaurantvoting.AbstractControllerTest;
-import ru.develop.restaurantvoting.common.util.JsonUtil;
+import ru.develop.restaurantvoting.TestTimeProviderConfig;
 import ru.develop.restaurantvoting.restaurant.model.Vote;
 import ru.develop.restaurantvoting.restaurant.repository.VoteRepository;
-import ru.develop.restaurantvoting.restaurant.to.VoteTo;
-import ru.develop.restaurantvoting.user.model.User;
-import ru.develop.restaurantvoting.user.repository.UserRepository;
+import ru.develop.restaurantvoting.restaurant.service.VoteService;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,20 +22,24 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.RESTAURANT1_ID;
-import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.RESTAURANT2_ID;
-import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.RESTAURANT3_ID;
+import static ru.develop.restaurantvoting.restaurant.RestaurantTestData.*;
 import static ru.develop.restaurantvoting.restaurant.VoteTestData.*;
-import static ru.develop.restaurantvoting.restaurant.web.VoteController.REST_URL;
 import static ru.develop.restaurantvoting.user.UserTestData.*;
+import static ru.develop.restaurantvoting.restaurant.web.VoteController.REST_URL;
 
+@Transactional
 class VoteControllerTest extends AbstractControllerTest {
 
-    @Autowired
-    private VoteRepository repository;
+    private static final String REST_URL_TODAY = REST_URL  + "/today";
 
     @Autowired
-    private UserRepository userRepository;
+    private VoteRepository voteRepository;
+
+    @Autowired
+    private VoteService voteService;
+
+    @Autowired
+    private TestTimeProviderConfig.TestTimeProvider testTimeProvider;
 
     @Test
     @WithUserDetails(value = USER_MAIL)
@@ -45,306 +48,519 @@ class VoteControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content -> {
-                    String json = content.getResponse().getContentAsString();
-                    List<VoteTo> voteTos = JsonUtil.readValues(json, VoteTo.class);
-                    assertThat(voteTos).hasSize(1);
-                    assertThat(voteTos.get(0).getRestaurantId()).isEqualTo(RESTAURANT1_ID);
-                });
+                .andExpect(content().json("""
+                    [
+                        {
+                            "id": 1,
+                            "restaurantId": 1,
+                            "restaurantName": "Burger King",
+                            "voteDate": "2026-01-15"
+                        }
+                    ]
+                    """, false));
     }
 
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
-    void getAllForAdmin() throws Exception {
+    void getAllAsAdmin() throws Exception {
         perform(MockMvcRequestBuilders.get(REST_URL))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content -> {
-                    String json = content.getResponse().getContentAsString();
-                    List<VoteTo> voteTos = JsonUtil.readValues(json, VoteTo.class);
-                    assertThat(voteTos).hasSize(1);
-                    assertThat(voteTos.get(0).getRestaurantId()).isEqualTo(RESTAURANT2_ID);
-                });
+                .andExpect(content().json("""
+                    [
+                        {
+                            "id": 2,
+                            "restaurantId": 2,
+                            "restaurantName": "McDonalds",
+                            "voteDate": "2026-01-15"
+                        }
+                    ]
+                    """, false));
+    }
+
+    @Test
+    void getAllUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
     void getToday() throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL + "/today"))
+        perform(MockMvcRequestBuilders.get(REST_URL_TODAY))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content -> {
-                    String json = content.getResponse().getContentAsString();
-                    VoteTo voteTo = JsonUtil.readValue(json, VoteTo.class);
-                    assertThat(voteTo.getRestaurantId()).isEqualTo(RESTAURANT1_ID);
-                    assertThat(voteTo.getVoteDate()).isEqualTo(LocalDate.now());
-                });
+                .andExpect(content().json("""
+                    {
+                        "id": 1,
+                        "restaurantId": 1,
+                        "restaurantName": "Burger King",
+                        "voteDate": "2026-01-15"
+                    }
+                    """, false));
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void getTodayAsAdmin() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL_TODAY))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("""
+                    {
+                        "id": 2,
+                        "restaurantId": 2,
+                        "restaurantName": "McDonalds",
+                        "voteDate": "2026-01-15"
+                    }
+                    """, false));
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void getTodayWhenNoVote() throws Exception {
-        repository.delete(userVote1);
+    void getTodayNotFound() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
 
-        perform(MockMvcRequestBuilders.get(REST_URL + "/today"))
-                .andExpect(status().isNotFound())
+        perform(MockMvcRequestBuilders.get(REST_URL_TODAY))
                 .andDo(print())
-                .andExpect(content().string(""));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void getAllUnAuth() throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL))
+    void getTodayUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL_TODAY))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void vote() throws Exception {
-        repository.delete(userVote1);
+    void createVote() throws Exception {
+        voteRepository.delete(userVote1);
+
+        String newVoteJson = """
+        {
+            "restaurantId": 3
+        }
+        """;
 
         ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT3_ID)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
                 .andExpect(status().isCreated())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
-        String json = action.andReturn().getResponse().getContentAsString();
-        VoteTo voteTo = JsonUtil.readValue(json, VoteTo.class);
-        assertThat(voteTo.getRestaurantId()).isEqualTo(RESTAURANT3_ID);
-        assertThat(voteTo.getVoteDate()).isEqualTo(LocalDate.now());
+        String response = action.andReturn().getResponse().getContentAsString();
+        assertThat(response).contains("\"restaurantId\":3");
+        assertThat(response).contains("\"restaurantName\":\"KFC\"");
 
-        List<Vote> userVotes = repository.getAllByUser(USER_ID);
+        List<Vote> userVotes = voteRepository.getAllByUser(USER_ID);
         assertThat(userVotes).hasSize(1);
         assertThat(userVotes.get(0).getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
     }
 
     @Test
-    @WithUserDetails(value = USER_MAIL)
-    void voteChangeBeforeDeadline() throws Exception {
-        Vote originalVote = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
+    @WithUserDetails(value = ADMIN_MAIL)
+    void createVoteAsAdmin() throws Exception {
+        voteRepository.deleteById(VOTE2_ID);
 
-        ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT3_ID)));
+        String newVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
 
-        if (LocalTime.now().isBefore(LocalTime.of(11, 0))) {
-            action.andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-
-            String json = action.andReturn().getResponse().getContentAsString();
-            VoteTo voteTo = JsonUtil.readValue(json, VoteTo.class);
-            assertThat(voteTo.getRestaurantId()).isEqualTo(RESTAURANT3_ID);
-
-            Vote updatedVote = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
-            assertThat(updatedVote.getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
-            assertThat(updatedVote.getId()).isEqualTo(originalVote.getId());
-        } else {
-            action.andExpect(status().isUnprocessableContent())
-                    .andExpect(content().string(containsString("Cannot change vote after")));
-
-            Vote existingVote = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
-            assertThat(existingVote.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
-        }
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
+                .andExpect(status().isCreated())
+                .andDo(print())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("""
+                    {
+                        "restaurantId": 3
+                    }
+                    """, false));
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void voteForNonExistentRestaurant() throws Exception {
-        repository.delete(userVote1);
+    void createVoteDuplicateForToday() throws Exception {
+        String newVoteJson = """
+            {
+                "restaurantId": 2
+            }
+            """;
 
         perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", "999"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
+                .andDo(print())
+                .andExpect(status().isConflict())
+                .andExpect(content().string(containsString("User has already voted today")));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void createVoteForNonExistentRestaurant() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        String newVoteJson = """
+            {
+                "restaurantId": 999
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void voteWithoutRestaurantId() throws Exception {
-        perform(MockMvcRequestBuilders.post(REST_URL))
+    void createVoteWithInvalidData() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        String invalidJson = "{}";
+
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
     }
 
     @Test
-    @WithUserDetails(value = USER_MAIL)
-    void deleteToday() throws Exception {
-        if (repository.getByUserAndDate(USER_ID, LocalDate.now()).isEmpty()) {
-            perform(MockMvcRequestBuilders.post(REST_URL)
-                    .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
-                    .andExpect(status().isCreated());
-        }
+    void createVoteUnauthorized() throws Exception {
+        String newVoteJson = """
+            {
+                "restaurantId": 1
+            }
+            """;
 
-        perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                .andDo(print());
-
-        if (LocalTime.now().isBefore(LocalTime.of(11, 0))) {
-            perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                    .andExpect(status().isNoContent());
-
-            assertThat(repository.getByUserAndDate(USER_ID, LocalDate.now())).isEmpty();
-        } else {
-            perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                    .andExpect(status().isUnprocessableContent());
-
-            assertThat(repository.getByUserAndDate(USER_ID, LocalDate.now())).isPresent();
-        }
-    }
-
-    @Test
-    @WithUserDetails(value = USER_MAIL)
-    void deleteTodayWhenNoVote() throws Exception {
-        repository.getByUserAndDate(USER_ID, LocalDate.now())
-                .ifPresent(repository::delete);
-
-        perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void voteUnAuth() throws Exception {
         perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void testVoteSequence() throws Exception {
-        repository.getByUserAndDate(USER_ID, LocalDate.now())
-                .ifPresent(repository::delete);
+    void updateVoteBeforeDeadline() throws Exception {
+        testTimeProvider.setTimeBeforeDeadline();
 
-        perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
-                .andExpect(status().isCreated());
+        String updatedVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
 
-        Vote vote1 = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
-        assertThat(vote1.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andExpect(status().isNoContent())
+                .andDo(print());
 
-        if (LocalTime.now().isBefore(LocalTime.of(11, 0))) {
-            perform(MockMvcRequestBuilders.post(REST_URL)
-                    .param("restaurantId", String.valueOf(RESTAURANT2_ID)))
-                    .andExpect(status().isOk());
-
-            Vote vote2 = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
-            assertThat(vote2.getRestaurant().getId()).isEqualTo(RESTAURANT2_ID);
-            assertThat(vote2.getId()).isEqualTo(vote1.getId());
-        } else {
-            perform(MockMvcRequestBuilders.post(REST_URL)
-                    .param("restaurantId", String.valueOf(RESTAURANT2_ID)))
-                    .andExpect(status().isUnprocessableContent());
-
-            Vote vote2 = repository.getByUserAndDate(USER_ID, LocalDate.now()).orElseThrow();
-            assertThat(vote2.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
-        }
+        Vote updated = voteRepository.getExistedByUserAndDate(USER_ID, LocalDate.now());
+        assertThat(updated.getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
     }
 
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
-    void voteForDifferentUser() throws Exception {
-        repository.getByUserAndDate(ADMIN_ID, LocalDate.now())
-                .ifPresent(repository::delete);
+    void updateVoteBeforeDeadlineAsAdmin() throws Exception {
+        testTimeProvider.setTimeBeforeDeadline();
 
-        perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT3_ID)))
-                .andExpect(status().isCreated());
+        String updatedVoteJson = """
+            {
+                "restaurantId": 1
+            }
+            """;
 
-        Vote adminVote = repository.getByUserAndDate(ADMIN_ID, LocalDate.now()).orElseThrow();
-        assertThat(adminVote.getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
-        repository.getByUserAndDate(USER_ID, LocalDate.now())
-                .ifPresent(userVote -> {
-                    assertThat(userVote.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
-                });
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andExpect(status().isNoContent())
+                .andDo(print());
+
+        Vote updated = voteRepository.getExistedByUserAndDate(ADMIN_ID, LocalDate.now());
+        assertThat(updated.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
     }
 
     @Test
     @WithUserDetails(value = USER_MAIL)
-    void getVotingHistory() throws Exception {
-        User user = userRepository.getExisted(USER_ID);
+    void updateVoteAfterDeadline() throws Exception {
+        testTimeProvider.setTimeAfterDeadline();
 
+        String updatedVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andDo(print())
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(content().string(containsString("Cannot change vote after")));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void updateVoteNoVoteForToday() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        testTimeProvider.setTimeBeforeDeadline();
+
+        String updatedVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void updateVoteForNonExistentRestaurant() throws Exception {
+        testTimeProvider.setTimeBeforeDeadline();
+
+        String updatedVoteJson = """
+            {
+                "restaurantId": 999
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateVoteUnauthorized() throws Exception {
+        String updatedVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void createVoteThenUpdateBeforeDeadline() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        String newVoteJson = """
+            {
+                "restaurantId": 2
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(newVoteJson))
+                .andExpect(status().isCreated());
+
+        testTimeProvider.setTimeBeforeDeadline();
+
+        String updatedVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedVoteJson))
+                .andExpect(status().isNoContent());
+
+        Vote finalVote = voteRepository.getExistedByUserAndDate(USER_ID, LocalDate.now());
+        assertThat(finalVote.getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testVotingHistoryOrdering() throws Exception {
         Vote yesterdayVote = new Vote(null, LocalDate.now().minusDays(1));
-        yesterdayVote.setRestaurant(userVote1.getRestaurant());
+        yesterdayVote.setRestaurant(restaurant2);
         yesterdayVote.setUser(user);
-        yesterdayVote = repository.save(yesterdayVote);
+        voteRepository.save(yesterdayVote);
 
-        try {
-            perform(MockMvcRequestBuilders.get(REST_URL))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                    .andExpect(content -> {
-                        String json = content.getResponse().getContentAsString();
-                        List<VoteTo> voteTos = JsonUtil.readValues(json, VoteTo.class);
-                        assertThat(voteTos.size()).isGreaterThanOrEqualTo(1);
-
-                        boolean foundYesterdayVote = voteTos.stream()
-                                .anyMatch(vote -> vote.getVoteDate().equals(LocalDate.now().minusDays(1)));
-                        assertThat(foundYesterdayVote).isTrue();
-                    });
-        } finally {
-            repository.delete(yesterdayVote);
-        }
-    }
-
-    @Test
-    @WithUserDetails(value = USER_MAIL)
-    void testVoteAndDeleteScenario() throws Exception {
-        repository.getByUserAndDate(USER_ID, LocalDate.now())
-                .ifPresent(repository::delete);
-
-        perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT2_ID)))
-                .andExpect(status().isCreated());
-
-        assertThat(repository.getByUserAndDate(USER_ID, LocalDate.now())).isPresent();
-
-        if (LocalTime.now().isBefore(LocalTime.of(11, 0))) {
-            perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                    .andExpect(status().isNoContent());
-
-            assertThat(repository.getByUserAndDate(USER_ID, LocalDate.now())).isEmpty();
-        } else {
-            perform(MockMvcRequestBuilders.delete(REST_URL + "/today"))
-                    .andExpect(status().isUnprocessableContent());
-
-            assertThat(repository.getByUserAndDate(USER_ID, LocalDate.now())).isPresent();
-        }
-    }
-
-    @Test
-    @WithUserDetails(value = USER_MAIL)
-    void voteTwiceSameRestaurant() throws Exception {
-        repository.getByUserAndDate(USER_ID, LocalDate.now())
-                .ifPresent(repository::delete);
-        perform(MockMvcRequestBuilders.post(REST_URL)
-                .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
-                .andExpect(status().isCreated());
-        if (LocalTime.now().isBefore(LocalTime.of(11, 0))) {
-            perform(MockMvcRequestBuilders.post(REST_URL)
-                    .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
-                    .andExpect(status().isOk());
-        } else {
-            perform(MockMvcRequestBuilders.post(REST_URL)
-                    .param("restaurantId", String.valueOf(RESTAURANT1_ID)))
-                    .andExpect(status().isUnprocessableContent());
-        }
-    }
-
-    @Test
-    @WithUserDetails(value = USER_MAIL)
-    void testGetTodayReturnsCorrectFormat() throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL + "/today"))
+        perform(MockMvcRequestBuilders.get(REST_URL))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content -> {
-                    String json = content.getResponse().getContentAsString();
-                    assertThat(json).contains("\"id\"", "\"restaurantId\"", "\"restaurantName\"", "\"voteDate\"");
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    assertThat(json).contains("\"id\":1");
+                    assertThat(json).contains("\"id\":3");
                 });
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testCreateVoteTwiceDifferentDays() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        String firstVoteJson = """
+            {
+                "restaurantId": 1
+            }
+            """;
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(firstVoteJson))
+                .andExpect(status().isCreated());
+
+        String secondVoteJson = """
+            {
+                "restaurantId": 2
+            }
+            """;
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(secondVoteJson))
+                .andDo(print())
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testUpdateVoteTwiceBeforeDeadline() throws Exception {
+        testTimeProvider.setTimeOneHourBeforeDeadline();
+
+        String firstUpdate = """
+            {
+                "restaurantId": 2
+            }
+            """;
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(firstUpdate))
+                .andExpect(status().isNoContent());
+
+        testTimeProvider.setTimeThirtyMinutesBeforeDeadline();
+        String secondUpdate = """
+            {
+                "restaurantId": 3
+            }
+            """;
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(secondUpdate))
+                .andExpect(status().isNoContent());
+
+        Vote finalVote = voteRepository.getExistedByUserAndDate(USER_ID, LocalDate.now());
+        assertThat(finalVote.getRestaurant().getId()).isEqualTo(RESTAURANT3_ID);
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testCreateAndUpdateFlow() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        testTimeProvider.setTimeOneHourBeforeDeadline();
+        String createVoteJson = """
+            {
+                "restaurantId": 1
+            }
+            """;
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createVoteJson))
+                .andExpect(status().isCreated());
+
+        testTimeProvider.setTimeThirtyMinutesBeforeDeadline();
+        String updateVoteJson = """
+            {
+                "restaurantId": 2
+            }
+            """;
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateVoteJson))
+                .andExpect(status().isNoContent());
+
+        testTimeProvider.setTimeAfterDeadline();
+        String lateUpdateJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(lateUpdateJson))
+                .andDo(print())
+                .andExpect(status().isUnprocessableContent());
+
+        Vote finalVote = voteRepository.getExistedByUserAndDate(USER_ID, LocalDate.now());
+        assertThat(finalVote.getRestaurant().getId()).isEqualTo(RESTAURANT2_ID);
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testEmptyVotingHistoryForNewUser() throws Exception {
+        voteRepository.deleteById(VOTE1_ID);
+
+        perform(MockMvcRequestBuilders.get(REST_URL))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testVoteResponseContainsAllRequiredFields() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL_TODAY))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(result -> {
+                    String json = result.getResponse().getContentAsString();
+                    assertThat(json).contains("\"id\"");
+                    assertThat(json).contains("\"restaurantId\"");
+                    assertThat(json).contains("\"restaurantName\"");
+                    assertThat(json).contains("\"voteDate\"");
+                });
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void testUpdateVoteExactlyAtDeadline() throws Exception {
+        testTimeProvider.setTimeAtDeadline();
+
+        String updateVoteJson = """
+            {
+                "restaurantId": 3
+            }
+            """;
+
+        perform(MockMvcRequestBuilders.put(REST_URL_TODAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateVoteJson))
+                .andDo(print())
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(content().string(containsString("Cannot change vote after")));
     }
 }

@@ -7,13 +7,14 @@ import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import ru.develop.restaurantvoting.common.to.BaseTo;
+import ru.develop.restaurantvoting.common.to.NamedTo;
 import ru.develop.restaurantvoting.common.validation.NoHtml;
 
 import java.time.LocalDate;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class MenuItemTo extends BaseTo {
+public class MenuItemTo extends NamedTo {
     @NotNull
     LocalDate menuDate;
 
@@ -26,8 +27,8 @@ public class MenuItemTo extends BaseTo {
     @Positive
     Integer price;
 
-    public MenuItemTo(Integer id, LocalDate menuDate, String description, Integer price) {
-        super(id);
+    public MenuItemTo(Integer id, LocalDate menuDate, String name, String description, Integer price) {
+        super(id, name);
         this.menuDate = menuDate;
         this.description = description;
         this.price = price;

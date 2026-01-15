@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import ru.develop.restaurantvoting.common.util.TimeProvider;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @TestConfiguration
@@ -12,25 +14,47 @@ public class TestTimeProviderConfig {
 
     @Bean
     @Primary
-    public TimeProvider testTimeProvider() {
+    public TestTimeProvider testTimeProvider() {
         return new TestTimeProvider();
     }
 
     public static class TestTimeProvider extends TimeProvider {
-        private LocalTime mockTime;
+        private LocalTime fixedTime = LocalTime.now();
 
-        public void setMockTime(LocalTime time) {
-            this.mockTime = time;
+        public void setCurrentTime(LocalTime time) {
+            this.fixedTime = time;
         }
 
         @Override
-        public LocalTime getCurrentTime() {
-            return mockTime != null ? mockTime : LocalTime.now();
+        public LocalDateTime getCurrentDateTime() {
+            return LocalDateTime.of(LocalDate.now(), fixedTime);
         }
 
         @Override
-        public boolean isBeforeDeadline() {
-            return getCurrentTime().isBefore(LocalTime.of(11, 0));
+        public boolean canChangeVote(LocalDate voteDate) {
+            LocalDateTime now = getCurrentDateTime();
+            return voteDate.equals(now.toLocalDate()) &&
+                    now.toLocalTime().isBefore(VOTE_DEADLINE);
+        }
+
+        public void setTimeBeforeDeadline() {
+            this.fixedTime = VOTE_DEADLINE.minusMinutes(1);
+        }
+
+        public void setTimeAfterDeadline() {
+            this.fixedTime = VOTE_DEADLINE.plusMinutes(1);
+        }
+
+        public void setTimeOneHourBeforeDeadline() {
+            this.fixedTime = VOTE_DEADLINE.minusHours(1);
+        }
+
+        public void setTimeThirtyMinutesBeforeDeadline() {
+            this.fixedTime = VOTE_DEADLINE.minusMinutes(30);
+        }
+
+        public void setTimeAtDeadline() {
+            this.fixedTime = VOTE_DEADLINE;
         }
     }
 }

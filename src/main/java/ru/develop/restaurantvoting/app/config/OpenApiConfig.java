@@ -2,7 +2,6 @@ package ru.develop.restaurantvoting.app.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
@@ -25,8 +24,7 @@ import org.springframework.context.annotation.Configuration;
                         <p><b>Test credentials:</b><br>
                         - user@yandex.ru / password<br>
                         - admin@gmail.com / admin</p>
-                        """,
-                contact = @Contact(name = "Developer", email = "developer@example.com")
+                        """
         ),
         security = @SecurityRequirement(name = "basicAuth")
 )

@@ -23,6 +23,9 @@ public interface MenuItemRepository extends BaseRepository<MenuItem> {
     @Query("SELECT m FROM MenuItem m WHERE m.id = :id AND m.restaurant.id = :restaurantId")
     Optional<MenuItem> get(int restaurantId, int id);
 
+    @Query("SELECT m FROM MenuItem m WHERE m.restaurant.id = :restaurantId AND m.menuDate = :date AND LOWER(m.name) = LOWER(:name)")
+    Optional<MenuItem> findByRestaurantAndDateAndNameIgnoreCase(int restaurantId, LocalDate date, String name);
+
     @Transactional
     @Modifying
     @Query("DELETE FROM MenuItem m WHERE m.restaurant.id = :restaurantId AND m.menuDate = :date")

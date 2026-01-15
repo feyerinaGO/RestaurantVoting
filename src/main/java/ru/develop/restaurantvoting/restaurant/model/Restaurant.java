@@ -15,7 +15,9 @@ import ru.develop.restaurantvoting.common.validation.NoHtml;
 import java.util.List;
 
 @Entity
-@Table(name = "restaurants")
+@Table(name = "restaurants", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name"}, name = "restaurants_unique_name_idx")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

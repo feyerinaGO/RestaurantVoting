@@ -35,6 +35,14 @@ public class UserTestData {
     static {
         user.setVotes(List.of(userVote1));
         admin.setVotes(List.of(adminVote1));
+
+        if (userVote1 != null) {
+            userVote1.setUser(user);
+        }
+        if (adminVote1 != null) {
+            adminVote1.setUser(admin);
+        }
+
         restaurant1.setVotes(List.of(userVote1));
         restaurant2.setVotes(List.of(adminVote1));
     }

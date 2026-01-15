@@ -2,8 +2,14 @@ spring:
   jpa:
     show-sql: false
     hibernate.ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_batch_fetch_size: 20
+        jdbc.batch_size: 20
   datasource:
     url: jdbc:h2:mem:voting_test
+    username: sa
+    password:
   cache:
     type: none
 
@@ -11,3 +17,4 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.test.web.servlet: DEBUG
+    ru.develop.restaurantvoting: DEBUG

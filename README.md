@@ -26,7 +26,7 @@ A REST API for restaurant voting system where users can vote for their preferred
 
 ## API Documentation
 
-Swagger UI: http://localhost:8080/swagger-ui.html
+Swagger UI: http://localhost:8080/swagger-ui/index.html
 
 ## Test Credentials
 
@@ -43,37 +43,47 @@ Swagger UI: http://localhost:8080/swagger-ui.html
 - `PUT /api/profile` - Update current user profile
 - `DELETE /api/profile` - Delete current user profile
 
-### Restaurants
-- `GET /api/restaurants` - Get all restaurants with today's menu
-- `GET /api/restaurants/{id}` - Get restaurant with today's menu
-- `GET /api/restaurants/by-date?date={date}` - Get restaurants with menu for specific date
+### Restaurants (authenticated)
+- `GET /api/restaurants` - Get all restaurants (without menu)
+- `GET /api/restaurants/{id}` - Get restaurant by ID (without menu)
+- `GET /api/restaurants/with-menu/today` - Get all restaurants with today's menu
+- `GET /api/restaurants/{id}/with-menu/today` - Get restaurant with today's menu
+- `GET /api/restaurants/with-menu/by-date?date={date}` - Get restaurants with menu for specific date (format YYYY-MM-DD)
 
-### Votes
+### Votes (authenticated)
 - `GET /api/profile/votes` - Get user's voting history
 - `GET /api/profile/votes/today` - Get today's vote
-- `POST /api/profile/votes?restaurantId={id}` - Vote for restaurant
-- `DELETE /api/profile/votes/today` - Delete today's vote (before 11:00)
+- `POST /api/profile/votes` - Vote for restaurant (требуется JSON: `{"restaurantId": id}`)
+- `PUT /api/profile/votes/today` - Update today's vote (before 11:00, JSON: `{"restaurantId": id}`)
 
 ### Admin - Users
 - `GET /api/admin/users` - Get all users
 - `GET /api/admin/users/{id}` - Get user by ID
+- `GET /api/admin/users/by-email?email={email}` - Get user by email
 - `POST /api/admin/users` - Create user
 - `PUT /api/admin/users/{id}` - Update user
 - `DELETE /api/admin/users/{id}` - Delete user
 - `PATCH /api/admin/users/{id}?enabled={bool}` - Enable/disable user
 
 ### Admin - Restaurants
-- `POST /api/restaurants` - Create restaurant
-- `PUT /api/restaurants/{id}` - Update restaurant
-- `DELETE /api/restaurants/{id}` - Delete restaurant
+- `GET /api/admin/restaurants/{id}` - Get restaurant without menu
+- `GET /api/admin/restaurants/{id}/with-menu` - Get full restaurant information with all menu items
+- `POST /api/admin/restaurants` - Create restaurant (JSON: `{"name": "...", "address": "..."}`)
+- `PUT /api/admin/restaurants/{id}` - Update restaurant
+- `DELETE /api/admin/restaurants/{id}` - Delete restaurant
 
 ### Admin - Menu Items
 - `GET /api/admin/restaurants/{restaurantId}/menu-items` - Get all menu items for restaurant
 - `GET /api/admin/restaurants/{restaurantId}/menu-items/{id}` - Get menu item
+- `GET /api/admin/restaurants/{restaurantId}/menu-items/by-date?date={date}` - Get menu items by date (format YYYY-MM-DD)
 - `POST /api/admin/restaurants/{restaurantId}/menu-items` - Create menu item
 - `PUT /api/admin/restaurants/{restaurantId}/menu-items/{id}` - Update menu item
 - `DELETE /api/admin/restaurants/{restaurantId}/menu-items/{id}` - Delete menu item
 - `DELETE /api/admin/restaurants/{restaurantId}/menu-items/by-date?date={date}` - Delete all menu items for date
+
+## Time Restrictions
+- Vote can be changed only before 11:00 
+- After 11:00 vote becomes unchangeable
 
 ## Running the Application
 
@@ -90,17 +100,27 @@ curl -X POST "http://localhost:8080/api/profile" \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@test.com","password":"testpass"}'
 
-# Login and get restaurants (today's menu)
+# Login and get restaurants (without menu)
 curl -u user@yandex.ru:password "http://localhost:8080/api/restaurants"
 
-# Vote for restaurant
-curl -u user@yandex.ru:password -X POST "http://localhost:8080/api/profile/votes?restaurantId=1"
+# Get restaurants with today's menu
+curl -u user@yandex.ru:password "http://localhost:8080/api/restaurants/with-menu/today"
+
+# Vote for restaurant 
+curl -u user@yandex.ru:password -X POST "http://localhost:8080/api/profile/votes" \
+  -H "Content-Type: application/json" \
+  -d '{"restaurantId": 1}'
 
 # Get voting history
 curl -u user@yandex.ru:password "http://localhost:8080/api/profile/votes"
 
+# Update vote (before 11:00)
+curl -u user@yandex.ru:password -X PUT "http://localhost:8080/api/profile/votes/today" \
+  -H "Content-Type: application/json" \
+  -d '{"restaurantId": 2}'
+
 # Admin: Create restaurant
-curl -u admin@gmail.com:admin -X POST "http://localhost:8080/api/restaurants" \
+curl -u admin@gmail.com:admin -X POST "http://localhost:8080/api/admin/restaurants" \
   -H "Content-Type: application/json" \
   -d '{"name":"New Restaurant","address":"123 Street"}'
 
